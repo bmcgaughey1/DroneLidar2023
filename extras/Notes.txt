@@ -1,0 +1,5 @@
+Changed folder name for OESF_Cedar_Plots_8_9_14 to OESF_Cedar_Plot_8_9_14 (dropped s in Plots)
+in H:\westforkenv_cedar_plots_2023\Cedar_Plots\ONF_Cedar_Plot_15_16\Reflectance, added "Plot" to file names
+in H:\westforkenv_cedar_plots_2023\Cedar_Plots\ONF_Cedar_Plot_17_thru_22\Reflectance, added "Plot" to file names
+in H:\westforkenv_cedar_plots_2023\Cedar_Plots\ONF_Cedar_Plot_23_24_25\Reflectance, added "Plot" to file names
+in H:\westforkenv_cedar_plots_2023\Cedar_Plots\ONF_Cedar_Plot_26_27\Reflectance, added "Plot" to file names
