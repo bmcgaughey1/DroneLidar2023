@@ -4,6 +4,10 @@
 # will be handled by changing dataFolder. However, the DTM conversion logic has
 # full file names so they will need to be changed as well.
 #
+# I made some corrections to file names...see notes.txt in extras. There
+# are also some inconsistencies in the folder structure for plot_8_9_14 with
+# separate folders for Plot_8_9 and Plot_14.
+#
 dataFolder <- "H:/westforkenv_cedar_plots_2023/Cedar_Plots"
 
 plotNumbers <- c(8, 9, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27)
@@ -48,6 +52,8 @@ imageFileBaseNames <- c(
   , "ONF_Cedar_Plot_26_27"
 )
 
+# these are the names used to identify the bands. The file names for the bands are formed
+# using the imageFileBaseNames[n] + "_transparent_reflectance_" + bandNames[n] + ".tif"
 bandNames <- c(
   "red"
   , "green"

@@ -4,7 +4,7 @@
 # Data are in UTM zone 10 with XY and elevations in meters
 #
 # Source file names (.tif) are in FileSystem.R
-source("FileSystem.R")
+source("Rcode/FileSystem.R")
 
 library(fusionwrapr)
 

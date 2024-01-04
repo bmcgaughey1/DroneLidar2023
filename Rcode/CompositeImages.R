@@ -1,6 +1,6 @@
 # code to create composite images for 2023 drone imagery
 #
-source("FileSystem.R")
+source("Rcode/FileSystem.R")
 
 library(terra)
 
@@ -9,6 +9,10 @@ library(terra)
 # thePlot <- 4
 
 for (thePlot in 1:length(imagePlotFolders)) {
+  # check to see if we already have the images...needed since a single images covers multiple plots
+  if (file.exists(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif")))
+    break
+  
   baseName <- paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_", "transparent_reflectance_")
   
   imageFile <- paste0(baseName, bandNames[1], ".tif")
@@ -39,7 +43,7 @@ for (thePlot in 1:length(imagePlotFolders)) {
   fcnir <- rast(list(nir, red, green))
   fcrededge <- rast(list(rededge, red, green))
   
-  # # get center of extent
+  # # get center of extent...this can be used to plot a small portion of the images to check for detail
   # buf <- 10
   # e <- ext(red)
   # center <- c((e[1] + e[2]) / 2, (e[3] + e[4]) / 2)
