@@ -1,13 +1,15 @@
-# code to produce a "book" of plot images. The book id placed in the same folder as
-# the plot images
+# code to produce a "book" of plot images. The book is placed in the base data folder
 #
 source("Rcode/FileSystem.R")
 
 library(terra)
+library(fusionwrapr)
 
 for (thePlot in 1:length(imagePlotFolders)) {
+  bookFileName <- paste0(dataFolder, "/", imageFileBaseNames[thePlot], "_Images.pdf")
+  
   # check to see if we already have the images...needed since a single images covers multiple plots
-  if (file.exists(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_Images.pdf")))
+  if (file.exists(bookFileName))
     next
   
   # read composite images and grayscale
@@ -35,7 +37,7 @@ for (thePlot in 1:length(imagePlotFolders)) {
   h <- shade(slope, aspect, angle = c(45, 45, 45, 80), direction = c(315, 0, 45, 135))
   h <- Reduce(mean, h)
   
-  pdf(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_Images.pdf"))
+  pdf(bookFileName)
   plot(h, col=grey(0:100/100), legend=FALSE, mar=c(2,2,2,4), main = "Hillshade")
   plot(panchro, col = grDevices::gray.colors(255), legend = FALSE, axes = FALSE, mar = c(0, 0, 2, 0), main = "panchromatic")
   plotRGB(rgb, mar = c(0, 0, 2, 0), main = "RGB")
@@ -43,3 +45,5 @@ for (thePlot in 1:length(imagePlotFolders)) {
   plotRGB(fcrededge, mar = c(0, 0, 2, 0), main = "False color rededge")
   dev.off()
 }
+
+?rgl::surface3d
