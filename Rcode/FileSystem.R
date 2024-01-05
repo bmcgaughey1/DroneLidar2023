@@ -32,6 +32,26 @@ imagePlotFolders <- c(
   , "ONF_Cedar_Plot_26_27/Reflectance"
 )
 
+plotFolders <- c(
+  "OESF_Cedar_Plot_8_9_14"
+  , "OESF_Cedar_Plot_8_9_14"
+  , "OESF_Cedar_Plot_10"
+  , "OESF_Cedar_Plot_8_9_14"
+  , "ONF_Cedar_Plot_15_16"
+  , "ONF_Cedar_Plot_15_16"
+  , "ONF_Cedar_Plot_17_thru_22"
+  , "ONF_Cedar_Plot_17_thru_22"
+  , "ONF_Cedar_Plot_17_thru_22"
+  , "ONF_Cedar_Plot_17_thru_22"
+  , "ONF_Cedar_Plot_17_thru_22"
+  , "ONF_Cedar_Plot_17_thru_22"
+  , "ONF_Cedar_Plot_23_24_25"
+  , "ONF_Cedar_Plot_23_24_25"
+  , "ONF_Cedar_Plot_23_24_25"
+  , "ONF_Cedar_Plot_26_27"
+  , "ONF_Cedar_Plot_26_27"
+)
+
 imageFileBaseNames <- c(
   "OESF_Cedar_Plot_8_9"
   , "OESF_Cedar_Plot_8_9"
