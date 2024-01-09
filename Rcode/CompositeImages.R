@@ -10,8 +10,8 @@ library(terra)
 
 for (thePlot in 1:length(imagePlotFolders)) {
   # check to see if we already have the images...needed since a single images covers multiple plots
-  if (file.exists(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif")))
-    break
+  #if (file.exists(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif")))
+  #  break
   
   baseName <- paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_", "transparent_reflectance_")
   
@@ -42,6 +42,11 @@ for (thePlot in 1:length(imagePlotFolders)) {
   rgb <- rast(list(red, green, blue))
   fcnir <- rast(list(nir, red, green))
   fcrededge <- rast(list(rededge, red, green))
+  nvdinir <- (nir - red) / (nir + red)
+  nvdirededge <- (nir - rededge) / (nir + rededge)
+  
+  #nvdinir <- stretch(nvdinir)
+  #nvdirededge <- stretch(nvdirededge)
   
   # # get center of extent...this can be used to plot a small portion of the images to check for detail
   # buf <- 10
@@ -66,6 +71,8 @@ for (thePlot in 1:length(imagePlotFolders)) {
   writeRaster(fcnir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif"), gdal = "TFW=YES", datatype = "INT1U", overwrite = TRUE)
   writeRaster(fcrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_rededge.tif"), gdal = "TFW=YES", datatype = "INT1U", overwrite = TRUE)
   writeRaster(rgb, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_RGB.tif"), gdal = "TFW=YES", datatype = "INT1U", overwrite = TRUE)
+  writeRaster(nvdirededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdirededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(nvdinir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdinir.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
   
   #writeRaster(fcnir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.bmp"), gdal = "WORLDFILE=YES", datatype = "INT1U", overwrite = TRUE)
 }

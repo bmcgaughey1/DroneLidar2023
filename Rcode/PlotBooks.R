@@ -9,8 +9,8 @@ for (thePlot in 1:length(imagePlotFolders)) {
   bookFileName <- paste0(dataFolder, "/", imageFileBaseNames[thePlot], "_Images.pdf")
   
   # check to see if we already have the images...needed since a single images covers multiple plots
-  if (file.exists(bookFileName))
-    next
+#  if (file.exists(bookFileName))
+ #   next
   
   # read composite images and grayscale
   baseName <- paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_", "transparent_reflectance_")
@@ -22,6 +22,8 @@ for (thePlot in 1:length(imagePlotFolders)) {
   rgb <- rast(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_RGB.tif"))
   fcnir <- rast(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif"))
   fcrededge <- rast(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_rededge.tif"))
+  nvdirededge <- rast(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdirededge.tif"))
+  nvdinir <- rast(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdinir.tif"))
   
   # get image extent to clip DTM since DTM covers more than 1 plot
   e <- ext(panchro)
@@ -43,6 +45,8 @@ for (thePlot in 1:length(imagePlotFolders)) {
   plotRGB(rgb, mar = c(0, 0, 2, 0), main = "RGB")
   plotRGB(fcnir, mar = c(0, 0, 2, 0), main = "False color NIR")
   plotRGB(fcrededge, mar = c(0, 0, 2, 0), main = "False color rededge")
+  plot(nvdinir, mar = c(0, 0, 2, 0), main = "NVDI using NIR")
+  plot(nvdirededge, mar = c(0, 0, 2, 0), main = "NVDI using rededge")
   dev.off()
 }
 
