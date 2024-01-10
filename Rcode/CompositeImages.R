@@ -8,10 +8,15 @@ library(terra)
 # then you can run individual lines to test things without using the loop to process all data
 # thePlot <- 4
 
+checkForFiles <- FALSE
+alpha <- 0.4
+
 for (thePlot in 1:length(imagePlotFolders)) {
   # check to see if we already have the images...needed since a single images covers multiple plots
-  #if (file.exists(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif")))
-  #  break
+  if (checkForFiles) {
+    if (file.exists(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif")))
+      break
+  }
   
   baseName <- paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_", "transparent_reflectance_")
   
@@ -38,12 +43,25 @@ for (thePlot in 1:length(imagePlotFolders)) {
   imageFile <- paste0(baseName, bandNames[6], ".tif")
   panchro <- rast(imageFile)
   panchro <- stretch(panchro)
-  
+
+  #Xie, Qiaoyun & Dash, Jadu & Huang, Wenjiang & Peng, Dailiang & Qin, Qiming &
+  #Mortimer, Hugh & Casa, Raffaele & Pignatti, Stefano & Laneve, Giovanni &
+  #Pascucci, Simone & Dong, Yingying & Ye, Huichun. (2018). Vegetation Indices
+  #Combining the Red and Red-Edge Spectral Information for Leaf Area Index
+  #Retrieval. IEEE Journal of Selected Topics in Applied Earth Observations and
+  #Remote Sensing. 11. 10.1109/JSTARS.2018.2813281.  
   rgb <- rast(list(red, green, blue))
   fcnir <- rast(list(nir, red, green))
   fcrededge <- rast(list(rededge, red, green))
   nvdinir <- (nir - red) / (nir + red)
   nvdirededge <- (nir - rededge) / (nir + rededge)
+  msr <- ((nir / red) - 1) / sqrt((nir / red) + 1)
+  msrrededge <- ((nir / rededge) - 1) / sqrt((nir / rededge) + 1)
+  cigreen <- nir / green -1
+  cirededge <- nir / rededge - 1
+  nvdiredrededge <- (nir - (alpha * red + (1 - alpha) * rededge)) / (nir + (alpha * red + (1 - alpha) * rededge))
+  msrredrededge <- (nir / (alpha * red + (1 - alpha) * rededge) - 1) / sqrt(nir / (alpha * red + (1 - alpha) * rededge) + 1)
+  ciredrededge <- nir / (alpha * red + (1 - alpha) * rededge) - 1
   
   #nvdinir <- stretch(nvdinir)
   #nvdirededge <- stretch(nvdirededge)
@@ -73,6 +91,13 @@ for (thePlot in 1:length(imagePlotFolders)) {
   writeRaster(rgb, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_RGB.tif"), gdal = "TFW=YES", datatype = "INT1U", overwrite = TRUE)
   writeRaster(nvdirededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdirededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
   writeRaster(nvdinir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdinir.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(msr, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_msr.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(msrrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_msrrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(cigreen, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_cigreen.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(cirededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_cirededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(nvdiredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdiredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(msrredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_msrredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(ciredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_ciredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
   
   #writeRaster(fcnir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.bmp"), gdal = "WORLDFILE=YES", datatype = "INT1U", overwrite = TRUE)
 }
