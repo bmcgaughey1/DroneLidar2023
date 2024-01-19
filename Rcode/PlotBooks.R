@@ -5,7 +5,7 @@ source("Rcode/FileSystem.R")
 library(terra)
 library(fusionwrapr)
 
-checkForFiles <- FALSE
+checkForFiles <- TRUE
 
 for (thePlot in 1:length(imagePlotFolders)) {
   bookFileName <- paste0(dataFolder, "/", imageFileBaseNames[thePlot], "_Images.pdf")
