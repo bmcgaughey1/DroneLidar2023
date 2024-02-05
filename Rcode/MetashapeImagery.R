@@ -19,21 +19,27 @@
 # custom stretch function. These images will be larger but will still display
 # correctly in GIS. the stretch16() function does the stretch to 16-bit values.
 #
-# I tested imge viewing in ArcPro and composite images with and without stretching
+# I tested image viewing in ArcPro and composite images with and without stretching
 # display "correctly". However, ArcPro automatically uses percent clip to adjust the 
 # range of values in the images for display. If you set the "stretch type" to 
 # "none", the composite made with the original band images is dark. The new,
 # stretched image with full 16-bit range displays OK (still dark and low contrast
 # but useable).
 #
+# I also noticed in ArcPro that pixels with values equal to the max possible value
+# seem to be treated in a special way. It might be that they are being treated as
+# no data. I "fixed" this by stretching to the max 16-bit integer value minus 1
+# (65534).
+#
 # for the stretch functions, I originally had the upper percentile value set to
-# 99.9 but I was cliiping off some valid data in the NIR and rededge bands. I changed
+# 99.9 but I was clipping off some valid data in the NIR and rededge bands. I changed
 # this to the 100th percentile (max data value) and it works better.
 #
 library(terra)
 
 # new stretch function...just a wrapper around terra's stretch function that
 # uses all cells and defaults to the 99.99 percentile instead of the maximum value
+# to scale values from 0-255
 stretchq <- function(
     x,
     maxq = 0.9999)
@@ -41,9 +47,12 @@ stretchq <- function(
   invisible(terra::stretch(x, minq = 0.0, maxq = maxq, maxcell = dim(x)[1] * dim(x[2])))
 }
 
+# new stretch function to produce 16-bit values. I left this one so it uses the
+# 99.9 percentile but scales from 0-65534 instead of 0-65535. ArcPro seemed to
+# be treating values of 65535 as invalid.
 stretch16 <- function (
     x,
-    maxq = 1.0  # same as maximum value
+    maxq = 0.999  # same as maximum value
 )
 {
   # check for maxq = 1.0...this is the maximum and it may be faster to compute
@@ -60,14 +69,14 @@ stretch16 <- function (
   x <- terra::ifel(x > q[1,1], q[1,1], x)
   
   # do the linear stretch
-  x <- x / q[1,1] * 65535
+  x <- x / q[1,1] * 65534
 }
 
-folder <- "H:/westforkenv_onf_cedar_plot_17_thru_22-tif_2024-01-17_1649/"
-baseName <- "ONF_Cedar_Plot_17_thru_22"
+#folder <- "H:/westforkenv_onf_cedar_plot_17_thru_22-tif_2024-01-17_1649/"
+#baseName <- "ONF_Cedar_Plot_17_thru_22"
 
-#folder <- "H:/westforkenv_oesf_cedar_plot_10_lwir_reflectance-tif_2024-01-18_1939/"
-#baseName <- "OESF_Cedar_Plot_10"
+folder <- "H:/westforkenv_oesf_cedar_plot_10_lwir_reflectance-tif_2024-01-18_1939/"
+baseName <- "OESF_Cedar_Plot_10"
 
 # alpha is used for some of the composite images defined in:
 # Xie, Qiaoyun & Dash, Jadu & Huang, Wenjiang & Peng, Dailiang & Qin, Qiming &
@@ -96,11 +105,11 @@ if (FALSE) {
   # otherwise the functions use a very small sample of the pixel values and may miss
   # extreme values
   size = dim(red)[1] * dim(red)[2]
-  summary(red, size = size)
-  hist(red, breaks = 50, maxcell = size)
+  summary(nir, size = size)
+  hist(green, breaks = 50, maxcell = size)
   t <- global(red, quantile, na.rm = TRUE, probs = c(0.9999))
   
-  # stretch values...two options: stretchq produces 0-255, stretch19 produces o-65535
+  # stretch values...two options: stretchq produces 0-255, stretch19 produces 0-65535
   reds <- stretchq(red)
   reds <- stretch16(red)
   summary(reds, size = size)
@@ -133,11 +142,14 @@ nvdinir <- (nir - red) / (nir + red)
 nvdirededge <- (nir - rededge) / (nir + rededge)
 msr <- ((nir / red) - 1) / sqrt((nir / red) + 1)
 msrrededge <- ((nir / rededge) - 1) / sqrt((nir / rededge) + 1)
-cigreen <- nir / green -1
+cigreen <- nir / green - 1
 cirededge <- nir / rededge - 1
 nvdiredrededge <- (nir - (alpha * red + (1 - alpha) * rededge)) / (nir + (alpha * red + (1 - alpha) * rededge))
 msrredrededge <- (nir / (alpha * red + (1 - alpha) * rededge) - 1) / sqrt(nir / (alpha * red + (1 - alpha) * rededge) + 1)
 ciredrededge <- nir / (alpha * red + (1 - alpha) * rededge) - 1
+
+# extra combinations
+nir_re_g <- rast(list(nir, rededge, green))
 
 # write off images...should probably add the baseName to keep the names associated with the units
 writeRaster(rgb, paste0(folder, "/", "Metashape_composite_RGB.tif"), gdal = "TFW=YES", datatype = "INT2U", overwrite = TRUE)
@@ -152,6 +164,8 @@ writeRaster(cirededge, paste0(folder, "/", "Metashape_composite_cirededge.tif"),
 writeRaster(nvdiredrededge, paste0(folder, "/", "Metashape_composite_nvdiredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
 writeRaster(msrredrededge, paste0(folder, "/", "Metashape_composite_msrredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
 writeRaster(ciredrededge, paste0(folder, "/", "Metashape_composite_ciredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
+
+writeRaster(nir_re_g, paste0(folder, "/", "Metashape_composite_nir_re_g.tif"), gdal = "TFW=YES", datatype = "INT2U", overwrite = TRUE)
 
 # ******************************************************************************
 # ******************************************************************************

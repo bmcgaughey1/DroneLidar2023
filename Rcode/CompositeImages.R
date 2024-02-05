@@ -4,46 +4,93 @@ source("Rcode/FileSystem.R")
 
 library(terra)
 
+# new stretch function...just a wrapper around terra's stretch function that
+# uses all cells and defaults to the 99.99 percentile instead of the maximum value
+# to scale values from 0-255
+stretchq <- function(
+    x,
+    maxq = 0.9999)
+{
+  invisible(terra::stretch(x, minq = 0.0, maxq = maxq, maxcell = dim(x)[1] * dim(x[2])))
+}
+
+# new stretch function to produce 16-bit values. I left this one so it uses the
+# 99.9 percentile but scales from 0-65534 instead of 0-65535. ArcPro seemed to
+# be treating values of 65535 as invalid.
+stretch16 <- function (
+    x,
+    maxq = 0.999  # same as maximum value
+)
+{
+  # check for maxq = 1.0...this is the maximum and it may be faster to compute
+  # the maximum directly
+  if (maxq == 1.0) {
+    q <- terra::global(x, max, na.rm = TRUE)
+  } else {
+    # compute the quantile
+    q <- terra::global(x, quantile, na.rm = TRUE, probs = c(maxq))
+  }
+  # q is a data frame so you have to add the subscripts to get the numeric value
+  
+  # truncate values to the target quantile value
+  x <- terra::ifel(x > q[1,1], q[1,1], x)
+  
+  # do the linear stretch
+  x <- x / q[1,1] * 65534
+}
+
+# alpha is used for some of the composite images defined in:
+# Xie, Qiaoyun & Dash, Jadu & Huang, Wenjiang & Peng, Dailiang & Qin, Qiming &
+# Mortimer, Hugh & Casa, Raffaele & Pignatti, Stefano & Laneve, Giovanni &
+# Pascucci, Simone & Dong, Yingying & Ye, Huichun. (2018). Vegetation Indices
+# Combining the Red and Red-Edge Spectral Information for Leaf Area Index
+# Retrieval. IEEE Journal of Selected Topics in Applied Earth Observations and
+# Remote Sensing. 11. 10.1109/JSTARS.2018.2813281.  
+alpha <- 0.4
+
 # you can use the following line to set a specific plot (by index into lists in FileSystem.R)
 # then you can run individual lines to test things without using the loop to process all data
-# thePlot <- 4
+# thePlot <- 1
 
-checkForFiles <- FALSE
-alpha <- 0.4
+checkForFiles <- TRUE
 
 for (thePlot in 1:length(imagePlotFolders)) {
   # check to see if we already have the images...needed since a single images covers multiple plots
   if (checkForFiles) {
     if (file.exists(paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif")))
-      break
+      next
   }
   
-  baseName <- paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_", "transparent_reflectance_")
+  baseName <- paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_")
   
-  imageFile <- paste0(baseName, bandNames[1], ".tif")
+  imageFile <- paste0(baseName, bandNames[1], "_reflectance.tif")
   red <- rast(imageFile)
-  red <- stretch(red)
+  red <- stretch16(red)
   
-  imageFile <- paste0(baseName, bandNames[2], ".tif")
+  imageFile <- paste0(baseName, bandNames[2], "_reflectance.tif")
   green <- rast(imageFile)
-  green <- stretch(green)
+  green <- stretch16(green)
   
-  imageFile <- paste0(baseName, bandNames[3], ".tif")
+  imageFile <- paste0(baseName, bandNames[3], "_reflectance.tif")
   blue <- rast(imageFile)
-  blue <- stretch(blue)
+  blue <- stretch16(blue)
   
-  imageFile <- paste0(baseName, bandNames[4], ".tif")
+  imageFile <- paste0(baseName, bandNames[4], "_reflectance.tif")
   nir <- rast(imageFile)
-  nir <- stretch(nir)
+  nir <- stretch16(nir)
   
-  imageFile <- paste0(baseName, bandNames[5], ".tif")
+  imageFile <- paste0(baseName, bandNames[5], "_reflectance.tif")
   rededge <- rast(imageFile)
-  rededge <- stretch(rededge)
+  rededge <- stretch16(rededge)
   
-  imageFile <- paste0(baseName, bandNames[6], ".tif")
+  imageFile <- paste0(baseName, bandNames[6], "_reflectance.tif")
   panchro <- rast(imageFile)
-  panchro <- stretch(panchro)
-
+  panchro <- stretch16(panchro)
+  
+  imageFile <- paste0(baseName, bandNames[7], "_reflectance.tif")
+  lwir <- rast(imageFile)
+  lwir <- stretch16(lwir)
+  
   #Xie, Qiaoyun & Dash, Jadu & Huang, Wenjiang & Peng, Dailiang & Qin, Qiming &
   #Mortimer, Hugh & Casa, Raffaele & Pignatti, Stefano & Laneve, Giovanni &
   #Pascucci, Simone & Dong, Yingying & Ye, Huichun. (2018). Vegetation Indices
@@ -63,6 +110,9 @@ for (thePlot in 1:length(imagePlotFolders)) {
   msrredrededge <- (nir / (alpha * red + (1 - alpha) * rededge) - 1) / sqrt(nir / (alpha * red + (1 - alpha) * rededge) + 1)
   ciredrededge <- nir / (alpha * red + (1 - alpha) * rededge) - 1
   
+  # extra combinations
+  nir_re_g <- rast(list(nir, rededge, green))
+
   #nvdinir <- stretch(nvdinir)
   #nvdirededge <- stretch(nvdirededge)
   
@@ -86,9 +136,9 @@ for (thePlot in 1:length(imagePlotFolders)) {
   #
   # write off composite images...convert to 8-bit integer data type to save space. Original image bands used 4-byte floating
   # point type but band DNs ranged form 0.0 - 1.0 so lots of wasted space.
-  writeRaster(fcnir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif"), gdal = "TFW=YES", datatype = "INT1U", overwrite = TRUE)
-  writeRaster(fcrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_rededge.tif"), gdal = "TFW=YES", datatype = "INT1U", overwrite = TRUE)
-  writeRaster(rgb, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_RGB.tif"), gdal = "TFW=YES", datatype = "INT1U", overwrite = TRUE)
+  writeRaster(fcnir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif"), gdal = "TFW=YES", datatype = "INT2U", overwrite = TRUE)
+  writeRaster(fcrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_rededge.tif"), gdal = "TFW=YES", datatype = "INT2U", overwrite = TRUE)
+  writeRaster(rgb, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_RGB.tif"), gdal = "TFW=YES", datatype = "INT2U", overwrite = TRUE)
   writeRaster(nvdirededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdirededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
   writeRaster(nvdinir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdinir.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
   writeRaster(msr, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_msr.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
@@ -98,6 +148,8 @@ for (thePlot in 1:length(imagePlotFolders)) {
   writeRaster(nvdiredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdiredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
   writeRaster(msrredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_msrredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
   writeRaster(ciredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_ciredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
+  
+  writeRaster(nir_re_g, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nir_re_g.tif"), gdal = "TFW=YES", datatype = "INT2U", overwrite = TRUE)
   
   #writeRaster(fcnir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.bmp"), gdal = "WORLDFILE=YES", datatype = "INT1U", overwrite = TRUE)
 }
