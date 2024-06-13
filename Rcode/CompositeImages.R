@@ -52,8 +52,19 @@ alpha <- 0.4
 # then you can run individual lines to test things without using the loop to process all data
 # thePlot <- 1
 
-checkForFiles <- TRUE
+checkForFiles <- FALSE
 
+# options for GDAL TIFF writer
+gdalOptions <- c("TFW=YES", "PHOTOMETRIC=RGB")
+
+# bitsPerPixel can be either 8 or 16. If 16, images won't read into FUSION
+bitsPerPixel <- 8
+
+dataType = "INT2U"
+if (bitsPerPixel == 8)
+  dataType = "INT1U"
+
+thePlot <- 1
 for (thePlot in 1:length(imagePlotFolders)) {
   # check to see if we already have the images...needed since a single images covers multiple plots
   if (checkForFiles) {
@@ -65,31 +76,52 @@ for (thePlot in 1:length(imagePlotFolders)) {
   
   imageFile <- paste0(baseName, bandNames[1], "_reflectance.tif")
   red <- rast(imageFile)
-  red <- stretch16(red)
+  if (bitsPerPixel == 8)
+    red <- stretchq(red)
+  else
+    red <- stretch16(red)
   
   imageFile <- paste0(baseName, bandNames[2], "_reflectance.tif")
   green <- rast(imageFile)
-  green <- stretch16(green)
+  if (bitsPerPixel == 8)
+    green <- stretchq(green)
+  else
+    green <- stretch16(green)
   
   imageFile <- paste0(baseName, bandNames[3], "_reflectance.tif")
   blue <- rast(imageFile)
-  blue <- stretch16(blue)
+  if (bitsPerPixel == 8)
+    blue <- stretchq(blue)
+  else
+    blue <- stretch16(blue)
   
   imageFile <- paste0(baseName, bandNames[4], "_reflectance.tif")
   nir <- rast(imageFile)
-  nir <- stretch16(nir)
+  if (bitsPerPixel == 8)
+    nir <- stretchq(nir)
+  else
+    nir <- stretch16(nir)
   
   imageFile <- paste0(baseName, bandNames[5], "_reflectance.tif")
   rededge <- rast(imageFile)
-  rededge <- stretch16(rededge)
+  if (bitsPerPixel == 8)
+    rededge <- stretchq(rededge)
+  else
+    rededge <- stretch16(rededge)
   
   imageFile <- paste0(baseName, bandNames[6], "_reflectance.tif")
   panchro <- rast(imageFile)
-  panchro <- stretch16(panchro)
+  if (bitsPerPixel == 8)
+    panchro <- stretchq(panchro)
+  else
+    panchro <- stretch16(panchro)
   
   imageFile <- paste0(baseName, bandNames[7], "_reflectance.tif")
   lwir <- rast(imageFile)
-  lwir <- stretch16(lwir)
+  if (bitsPerPixel == 8)
+    lwir <- stretchq(lwir)
+  else
+    lwir <- stretch16(lwir)
   
   #Xie, Qiaoyun & Dash, Jadu & Huang, Wenjiang & Peng, Dailiang & Qin, Qiming &
   #Mortimer, Hugh & Casa, Raffaele & Pignatti, Stefano & Laneve, Giovanni &
@@ -130,26 +162,25 @@ for (thePlot in 1:length(imagePlotFolders)) {
   # 
   # plot(crop(panchro, newExtent), col = grDevices::gray.colors(255))
   
-  # we need a world file to use these images with FUSION. This is done using the gdal options. You can use
-  # WORLDFILE=YES but the file extension will be .wld which FUSION won't recognize. TFW-YES produces a world file
+  # we need a world file to use these images with FUSION (not any more!!...GeoTIFF is recognized). This is done using the gdal options. You can use
+  # WORLDFILE=YES but the file extension will be .wld which FUSION won't recognize. TFW=YES produces a world file
   # with .tfw extension which FUSION will recognize and use.
   #
-  # write off composite images...convert to 8-bit integer data type to save space. Original image bands used 4-byte floating
-  # point type but band DNs ranged form 0.0 - 1.0 so lots of wasted space.
-  writeRaster(fcnir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif"), gdal = "TFW=YES", datatype = "INT2U", overwrite = TRUE)
-  writeRaster(fcrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_rededge.tif"), gdal = "TFW=YES", datatype = "INT2U", overwrite = TRUE)
-  writeRaster(rgb, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_RGB.tif"), gdal = "TFW=YES", datatype = "INT2U", overwrite = TRUE)
-  writeRaster(nvdirededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdirededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
-  writeRaster(nvdinir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdinir.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
-  writeRaster(msr, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_msr.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
-  writeRaster(msrrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_msrrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
-  writeRaster(cigreen, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_cigreen.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
-  writeRaster(cirededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_cirededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
-  writeRaster(nvdiredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdiredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
-  writeRaster(msrredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_msrredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
-  writeRaster(ciredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_ciredrededge.tif"), gdal = "TFW=YES", datatype = "FLT4S", overwrite = TRUE)
+  # write off composite images
+  writeRaster(fcnir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.tif"), gdal = gdalOptions, datatype = dataType, overwrite = TRUE)
+  writeRaster(fcrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_rededge.tif"), gdal = gdalOptions, datatype = dataType, overwrite = TRUE)
+  writeRaster(rgb, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_RGB.tif"), gdal = gdalOptions, datatype = dataType, overwrite = TRUE)
+  writeRaster(nvdirededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdirededge.tif"), gdal = gdalOptions, datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(nvdinir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdinir.tif"), gdal = gdalOptions, datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(msr, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_msr.tif"), gdal = gdalOptions, datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(msrrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_msrrededge.tif"), gdal = gdalOptions, datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(cigreen, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_cigreen.tif"), gdal = gdalOptions, datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(cirededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_cirededge.tif"), gdal = gdalOptions, datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(nvdiredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nvdiredrededge.tif"), gdal = gdalOptions, datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(msrredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_msrredrededge.tif"), gdal = gdalOptions, datatype = "FLT4S", overwrite = TRUE)
+  writeRaster(ciredrededge, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_ciredrededge.tif"), gdal = gdalOptions, datatype = "FLT4S", overwrite = TRUE)
   
-  writeRaster(nir_re_g, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nir_re_g.tif"), gdal = "TFW=YES", datatype = "INT2U", overwrite = TRUE)
+  writeRaster(nir_re_g, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_nir_re_g.tif"), gdal = gdalOptions, datatype = dataType, overwrite = TRUE)
   
   #writeRaster(fcnir, paste0(dataFolder, "/", imagePlotFolders[thePlot], "/", imageFileBaseNames[thePlot], "_NIR.bmp"), gdal = "WORLDFILE=YES", datatype = "INT1U", overwrite = TRUE)
 }
